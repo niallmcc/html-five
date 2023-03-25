@@ -22,9 +22,11 @@
 
 import unittest
 from htmlfive.html5_parser import Html5Parser
-from htmlfive.html5_exporter import Html5Exporter
+from htmlfive.html5_formatter import Html5Formatter
+from htmlfive.html5_common import HTML5_DOCTYPE
 
-simple_test_html=\
+
+simple_test_input=\
 """<!DOCTYPE html>
 <html>
     <head>
@@ -41,15 +43,33 @@ simple_test_html=\
     </body>
 </html>"""
 
+simple_test_expected=\
+"""&lt;<span style="color:red;">html</span>&gt;
+    &lt;<span style="color:red;">head</span>&gt;
+        &lt;<span style="color:red;">title</span>&gt;
+            Title!
+        &lt;/<span style="color:red;">title</span>&gt;
+    &lt;/<span style="color:red;">head</span>&gt;
+    &lt;<span style="color:red;">body</span>&gt;
+        &lt;<span style="color:red;">h1</span> <span style="color:blue;">class</span>=<span style="color:purple;">"heading"</span> <span style="color:blue;">a</span>=<span style="color:purple;">'"hello"'</span>&gt;
+            Hello World
+            Hello World
+        &lt;/<span style="color:red;">h1</span>&gt;
+        &lt;<span style="color:red;">input</span> <span style="color:blue;">type</span>=<span style="color:purple;">"text"</span> <span style="color:blue;">id</span>=<span style="color:purple;">"text_input"</span>/&gt;
+    &lt;/<span style="color:red;">body</span>&gt;
+&lt;/<span style="color:red;">html</span>&gt;"""
+
 class BasicTest(unittest.TestCase):
 
     def test_simple(self):
         # round trip some simple HTML
-        parser = Html5Parser(simple_test_html)
+        parser = Html5Parser(simple_test_input)
         dom = parser.parse()
-        exporter = Html5Exporter()
-        expected = simple_test_html
-        self.assertEqual(exporter.export(dom).strip(),expected.strip())
+        formatter = Html5Formatter()
+        exported = formatter.format(dom)
+        with open("test_simple.html","w") as f:
+            f.write(HTML5_DOCTYPE+"<html><pre><code>"+exported+"</code></pre></html>")
+        self.assertEqual(exported.strip(), simple_test_expected.strip())
 
 if __name__ == '__main__':
     unittest.main()

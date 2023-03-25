@@ -26,8 +26,8 @@ from .html5_common import HTML5_DOCTYPE, raw_text_elements, void_elements
 
 class Html5Exporter:
 
-    def __init__(self,dom):
-        self.dom = dom
+    def __init__(self):
+        pass
 
     def is_ws(self,txt):
         txt = txt.replace(" ","").replace("\t","").replace("\n","")
@@ -72,9 +72,9 @@ class Html5Exporter:
             self.of.write(txt)
             self.of.write("\n")
 
-    def export(self):
+    def export(self, doc):
         self.of = io.StringIO()
         self.of.write(HTML5_DOCTYPE+"\n")
-        ele = self.dom.documentElement
+        ele = doc.documentElement
         self.exportElement(ele,0)
         return self.of.getvalue()

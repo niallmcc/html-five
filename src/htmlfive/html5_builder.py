@@ -94,8 +94,8 @@ class Html5Builder:
         return self.__body
 
     def get_html(self):
-        exporter = Html5Exporter(self.doc)
-        return exporter.export().strip()
+        exporter = Html5Exporter()
+        return exporter.export(self.doc).strip()
 
 
 
