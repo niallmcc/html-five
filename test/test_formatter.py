@@ -37,14 +37,14 @@ simple_test_input=\
     <body>
         <h1 class="heading" a='"hello"'>
             Hello World
-            Hello World
         </h1>
         <input type="text" id="text_input">
     </body>
 </html>"""
 
 simple_test_expected=\
-"""&lt;<span style="color:red;">html</span>&gt;
+"""&lt;!DOCTYPE html&gt;
+&lt;<span style="color:red;">html</span>&gt;
     &lt;<span style="color:red;">head</span>&gt;
         &lt;<span style="color:red;">title</span>&gt;
             Title!
@@ -52,7 +52,6 @@ simple_test_expected=\
     &lt;/<span style="color:red;">head</span>&gt;
     &lt;<span style="color:red;">body</span>&gt;
         &lt;<span style="color:red;">h1</span> <span style="color:blue;">class</span>=<span style="color:purple;">"heading"</span> <span style="color:blue;">a</span>=<span style="color:purple;">'"hello"'</span>&gt;
-            Hello World
             Hello World
         &lt;/<span style="color:red;">h1</span>&gt;
         &lt;<span style="color:red;">input</span> <span style="color:blue;">type</span>=<span style="color:purple;">"text"</span> <span style="color:blue;">id</span>=<span style="color:purple;">"text_input"</span>/&gt;
@@ -63,8 +62,8 @@ class BasicTest(unittest.TestCase):
 
     def test_simple(self):
         # round trip some simple HTML
-        parser = Html5Parser(simple_test_input)
-        dom = parser.parse()
+        parser = Html5Parser()
+        dom = parser.parse(simple_test_input)
         formatter = Html5Formatter()
         exported = formatter.format(dom)
         with open("test_simple.html","w") as f:
