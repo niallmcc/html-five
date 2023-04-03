@@ -23,8 +23,7 @@
 import unittest
 from htmlfive.html5_parser import Html5Parser
 from htmlfive.html5_formatter import Html5Formatter
-from htmlfive.html5_common import HTML5_DOCTYPE
-
+from xml.dom.minidom import getDOMImplementation
 
 simple_test_input=\
 """<!DOCTYPE html>
@@ -58,6 +57,14 @@ simple_test_expected=\
     &lt;/<span style="color:red;">body</span>&gt;
 &lt;/<span style="color:red;">html</span>&gt;"""
 
+dom_expected = """&lt;!DOCTYPE html&gt;
+&lt;<span style="color:red;">html</span>&gt;
+    &lt;<span style="color:red;">body</span> <span style="color:blue;">attrname</span>=<span style="color:purple;">"attrvalue"</span>&gt;
+        Hello
+    &lt;/<span style="color:red;">body</span>&gt;
+&lt;/<span style="color:red;">html</span>&gt;
+"""
+
 class BasicTest(unittest.TestCase):
 
     def test_simple(self):
@@ -66,9 +73,19 @@ class BasicTest(unittest.TestCase):
         dom = parser.parse(simple_test_input)
         formatter = Html5Formatter()
         exported = formatter.format(dom)
-        with open("test_simple.html","w") as f:
-            f.write(HTML5_DOCTYPE+"<html><pre><code>"+exported+"</code></pre></html>")
         self.assertEqual(exported.strip(), simple_test_expected.strip())
+
+    def test_with_dom(self):
+        doc = getDOMImplementation().createDocument(None, "html", None)
+        body = doc.createElement("body")
+        body.setAttribute("attrname", "attrvalue")
+        doc.documentElement.appendChild(body)
+        txt = doc.createTextNode("Hello")
+        body.appendChild(txt)
+        formatter = Html5Formatter()
+        exported = formatter.format(doc)
+        self.assertEqual(exported.strip(), simple_test_expected.strip())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,15 +27,16 @@ from htmlfive.html5_exporter import Html5Exporter
 simple_test_html=\
 """<!DOCTYPE html>
 <html>
-    <head>
+    <head a="a" b="b" c>
         <title>
             Title!
         </title>
     </head>
     <body>
-        <h1 class="heading" a='"hello"'>
-            Hello World
-            Hello World
+        <br>
+        <h1 class="heading" a='"hello"' b="こんにちは" c="&lt;&gt;">
+            Hello
+            こんにちは
         </h1>
         <input type="text" id="text_input">
     </body>
@@ -45,11 +46,19 @@ class BasicTest(unittest.TestCase):
 
     def test_simple(self):
         # round trip some simple HTML
-        parser = Html5Parser(simple_test_html)
-        dom = parser.parse()
+        parser = Html5Parser()
+        dom = parser.parse(simple_test_html)
         exporter = Html5Exporter()
         expected = simple_test_html
         self.assertEqual(exporter.export(dom).strip(),expected.strip())
+
+    def test_no_doctype(self):
+        # same as simple test but without DOCTYPE
+        parser = Html5Parser()
+        dom = parser.parse(simple_test_html.replace("<!DOCTYPE html>",""))
+        exporter = Html5Exporter()
+        expected = simple_test_html
+        self.assertEqual(exporter.export(dom).strip(), expected.strip())
 
 if __name__ == '__main__':
     unittest.main()

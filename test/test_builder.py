@@ -21,17 +21,19 @@
 # SOFTWARE.
 
 import unittest
-from htmlfive.html5_builder import Html5Builder
+from htmlfive import Html5Builder
 
 expected = """<!DOCTYPE html>
 <html>
-    <head class="abc">
+    <head>
         <title>
             Title!
         </title>
     </head>
     <body>
-        <h1 id="heading"></h1>
+        <h1 id="heading">
+            Heading
+        </h1>
         <br>
         <div>
             Lorem Ipsum
@@ -45,7 +47,7 @@ class BasicTest(unittest.TestCase):
         # round trip some simple HTML
         builder = Html5Builder()
         builder.head().add_element("title").add_text("Title!")
-        builder.body().add_element("h1",{"id":"heading"})
+        builder.body().add_element("h1",{"id":"heading"}).add_text("Heading")
         builder.body().add_element("br")
         builder.body().add_element("div").add_text("Lorem Ipsum")
         self.assertEqual(builder.get_html(),expected)

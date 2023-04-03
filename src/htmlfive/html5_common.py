@@ -23,5 +23,4 @@
 void_elements = "area,base,br,col,embed,hr,img,input,link,meta,param,source,track,wbr".split(",")
 raw_text_elements = "script,style".split(",")
 
-HTML5_DOCTYPE="<!DOCTYPE html>"
-
+HTML5_DOCTYPE = "<!DOCTYPE html>"

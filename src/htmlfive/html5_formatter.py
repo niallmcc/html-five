@@ -20,23 +20,75 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class Html5Formatter:
+import xml.dom.minidom
+from typing import Union
 
-    def __init__(self, indent_spaces=4, line_limit = 40, tag_style="color:red;", attribute_name_style="color:blue;", attribute_value_style="color:purple;"):
+
+class Html5Formatter:
+    """
+    Export a DOM describing an HTML5 document to a formatted (and styled) HTML string.
+
+    Args:
+        indent_spaces: number of spaces to make up each indent
+        line_limit: limit the length of formatted output lines
+        tag_style: CSS to apply to tag names
+        attribute_name_style: CSS to apply to attribute names
+        attribute_value_style: CSS to apply to attribute values
+    Returns:
+        A string containing the formatted HTML
+
+    A way you might use me is:
+
+    >>> from htmlfive import Html5Formatter
+    >>> from xml.dom.minidom import getDOMImplementation
+    >>> doc = getDOMImplementation().createDocument(None, "html", None)
+    >>> body = doc.createElement("body")
+    >>> body.setAttribute("attrname", "attrvalue")
+    >>> doc.documentElement.appendChild(body)
+    >>> txt = doc.createTextNode("Hello")
+    >>> body.appendChild(txt)
+    >>> formatter = Html5Formatter()
+    >>> exported = formatter.format(doc)
+    >>> print(exported)
+    &lt;!DOCTYPE html&gt;
+    &lt;<span style="color:red;">html</span>&gt;
+        &lt;<span style="color:red;">body</span> <span style="color:blue;">attrname</span>=<span style="color:purple;">"attrvalue"</span>&gt;
+            Hello
+        &lt;/<span style="color:red;">body</span>&gt;
+    &lt;/<span style="color:red;">html</span>&gt;
+
+    """
+
+    def __init__(self, indent_spaces: int = 4, line_limit: int = 40, tag_style: str = "color:red;",
+                 attribute_name_style: str = "color:blue;", attribute_value_style: str = "color:purple;"):
         self.indent_spaces = indent_spaces
         self.line_limit = line_limit
         self.tag_style = tag_style
         self.attribute_name_style = attribute_name_style
         self.attribute_value_style = attribute_value_style
 
-    def format(self, doc):
-        element = doc.documentElement
-        return self.__escape_element(element,0)[1:] # skip newline
+    def format(self, doc_or_element: Union[xml.dom.minidom.Element, xml.dom.minidom.Document]) -> str:
+        """
+        Export a DOM to a formatted HTML string.
 
-    def __indent_line(self,indent):
-        return "\n"+" "*indent*self.indent_spaces
+        Args:
+            doc_or_element: the DOM document or element to export.
 
-    def __escape_element(self,element,indent):
+        Returns:
+            A string containing the formatted HTML
+        """
+        if isinstance(doc_or_element, xml.dom.minidom.Document):
+            element = doc_or_element.documentElement
+            header = "&lt;!DOCTYPE html&gt;\n"
+        else:
+            element = doc_or_element
+            header = ""
+        return header + self.__escape_element(element, 0)[1:]  # skip newline
+
+    def __indent_line(self, indent):
+        return "\n" + " " * indent * self.indent_spaces
+
+    def __escape_element(self, element, indent):
         tag = element.tagName.lower()
 
         lines = ""
@@ -44,23 +96,24 @@ class Html5Formatter:
         line_length = len(line)
 
         line += "&lt;"
-        line += '<span style="%s">'%self.tag_style + tag + '</span>'
+        line += '<span style="%s">' % self.tag_style + tag + '</span>'
         line_length += len(tag) + 1
         attrs = element.attributes;
-        for (aname,avalue) in attrs.items():
+        for (aname, avalue) in attrs.items():
             if line_length > self.line_limit:
                 lines += line
                 line = self.__indent_line(indent + 1)
                 line_length = len(line)
 
-            line += ' ' + '<span style="%s">'%self.attribute_name_style + aname + '</span>';
-            if avalue:
+            line += ' ' + '<span style="%s">' % self.attribute_name_style + aname + '</span>';
+            if avalue is not None:
                 q = '"'
                 if q in avalue:
                     q = "'"
 
-                line += "=" + '<span style="%s">'%self.attribute_value_style + q + avalue + q + '</span>'
-
+                line += "=" + '<span style="%s">' % self.attribute_value_style + q + avalue + q + '</span>'
+            else:
+                avalue = ""
             line_length += len(aname) + len(avalue) + 4
 
         children = element.childNodes;
@@ -73,15 +126,15 @@ class Html5Formatter:
 
             for node in children:
 
-                if  node.nodeType == node.ELEMENT_NODE:
-                    lines += self.__escape_element(node, indent+1)
+                if node.nodeType == node.ELEMENT_NODE:
+                    lines += self.__escape_element(node, indent + 1)
 
                 elif node.nodeType == node.TEXT_NODE:
                     if node.nodeValue:
-                        lines += self.__dump_text_node(node, indent+1)
+                        lines += self.__dump_text_node(node, indent + 1)
 
             line = self.__indent_line(indent)
-            line += "&lt;/" + '<span style="%s">'%self.tag_style + tag + '</span>' + "&gt;"
+            line += "&lt;/" + '<span style="%s">' % self.tag_style + tag + '</span>' + "&gt;"
             lines += line
 
         return lines
@@ -92,6 +145,5 @@ class Html5Formatter:
         for line in textlines:
             line = line.strip()
             if line:
-                lines += self.__indent_line(indent)+line
+                lines += self.__indent_line(indent) + line
         return lines
-

@@ -21,27 +21,61 @@
 # SOFTWARE.
 
 import io
-
+import html as htmlutils
+import xml.dom.minidom
 from .html5_common import HTML5_DOCTYPE, raw_text_elements, void_elements
 
+
 class Html5Exporter:
+    """
+    Export an XML dom as html5
 
-    def __init__(self):
-        pass
+    Args
+        indent_spaces: number of spaces to make up each indent
 
-    def is_ws(self,txt):
-        txt = txt.replace(" ","").replace("\t","").replace("\n","")
+    A way you might use me is:
+
+    >>> from htmlfive import Html5Exporter
+    >>> from xml.dom.minidom import getDOMImplementation
+    >>> doc = getDomImplementation().createDocument(None, "html", None)
+    >>> body = doc.createElement("body")
+    >>> doc.documentElement.appendChild(body)
+    >>> txt = doc.createTextNode("Hello")
+    >>> body.appendChild(txt)
+    >>> exporter = Html5Exporter()
+    >>> html = exporter.export(doc)
+    >>> print(html)
+    <!DOCTYPE html>
+    <html>
+        <body>
+            Hello
+        </body>
+    </html>
+    """
+
+    def __init__(self, indent_spaces: int = 4):
+        self.indent_spaces = indent_spaces
+
+    def __is_ws(self, txt):
+        txt = txt.replace(" ", "").replace("\t", "").replace("\n", "")
         return txt == ""
 
-    def exportElement(self,ele,indent):
-        self.of.write(indent*" ")
-        self.of.write("<"+ele.tagName)
+    def __exportElement(self, ele, indent):
+        self.of.write(indent * " " * self.indent_spaces)
+        self.of.write("<" + ele.tagName)
         attr_count = 0
-        for (k,v) in ele.attributes.items():
-            if '"' in v:
-                self.of.write(" %s='%s'"%(k,v)) # single quote values containing double quote
+        for (k, v) in ele.attributes.items():
+            if v is None:
+                self.of.write(" %s" % k)
             else:
-                self.of.write(' %s="%s"'%(k,v))
+                if '"' in v:
+                    if "'" in v:
+                        self.of.write(' %s="%s"' % (k, htmlutils.escape(v)))
+                    else:
+                        self.of.write(" %s='%s'" % (
+                            k, htmlutils.escape(v, quote=False)))  # single quote values containing double quote
+                else:
+                    self.of.write(' %s="%s"' % (k, htmlutils.escape(v, quote=False)))
             attr_count += 1
         child_count = len(ele.childNodes)
 
@@ -51,13 +85,13 @@ class Html5Exporter:
                 self.of.write("\n")
                 for childNode in ele.childNodes:
                     if childNode.nodeType == childNode.ELEMENT_NODE:
-                        self.exportElement(childNode,indent+4)
+                        self.__exportElement(childNode, indent + 1)
                     elif childNode.nodeType == childNode.TEXT_NODE:
-                        self.exportText(childNode,indent+4)
-                self.of.write(" "*indent+"</%s>"%ele.tagName)
+                        self.__exportText(childNode, indent + 1)
+                self.of.write(" " * indent * self.indent_spaces + "</%s>" % ele.tagName)
             else:
                 if ele.tagName not in void_elements:
-                    self.of.write("</%s>"%ele.tagName)
+                    self.of.write("</%s>" % ele.tagName)
         else:
             if ele.tagName not in void_elements:
                 self.of.write("/>")
@@ -65,16 +99,25 @@ class Html5Exporter:
                 self.of.write(">")
         self.of.write("\n")
 
-    def exportText(self, tn, indent):
+    def __exportText(self, tn, indent):
         txt = tn.data.rstrip(" \n").lstrip(" \n")
-        if not self.is_ws(txt):
-            self.of.write(" "*indent)
-            self.of.write(txt)
+        if not self.__is_ws(txt):
+            self.of.write(" " * indent * self.indent_spaces)
+            self.of.write(htmlutils.escape(txt))
             self.of.write("\n")
 
-    def export(self, doc):
-        self.of = io.StringIO()
-        self.of.write(HTML5_DOCTYPE+"\n")
-        ele = doc.documentElement
-        self.exportElement(ele,0)
-        return self.of.getvalue()
+    def export(self, doc: xml.dom.minidom.Document) -> str:
+        """
+        Export a DOM to an HTML string.
+
+        Args:
+            doc: the DOM document to export
+
+        Returns:
+            A string containing the HTML
+        """
+        with io.StringIO() as self.of:
+            self.of.write(HTML5_DOCTYPE + "\n")
+            ele = doc.documentElement
+            self.__exportElement(ele, 0)
+            return self.of.getvalue()
