@@ -53,7 +53,7 @@ simple_test_expected=\
         &lt;<span style="color:red;">h1</span> <span style="color:blue;">class</span>=<span style="color:purple;">"heading"</span> <span style="color:blue;">a</span>=<span style="color:purple;">'"hello"'</span>&gt;
             Hello World
         &lt;/<span style="color:red;">h1</span>&gt;
-        &lt;<span style="color:red;">input</span> <span style="color:blue;">type</span>=<span style="color:purple;">"text"</span> <span style="color:blue;">id</span>=<span style="color:purple;">"text_input"</span>/&gt;
+        &lt;<span style="color:red;">input</span> <span style="color:blue;">type</span>=<span style="color:purple;">"text"</span> <span style="color:blue;">id</span>=<span style="color:purple;">"text_input"</span>&gt;
     &lt;/<span style="color:red;">body</span>&gt;
 &lt;/<span style="color:red;">html</span>&gt;"""
 
@@ -84,7 +84,7 @@ class BasicTest(unittest.TestCase):
         body.appendChild(txt)
         formatter = Html5Formatter()
         exported = formatter.format(doc)
-        self.assertEqual(exported.strip(), simple_test_expected.strip())
+        self.assertEqual(exported.strip(), dom_expected.strip())
 
 
 if __name__ == '__main__':

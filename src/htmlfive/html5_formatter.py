@@ -22,6 +22,7 @@
 
 import xml.dom.minidom
 from typing import Union
+from .html5_common import void_elements
 
 
 class Html5Formatter:
@@ -118,7 +119,9 @@ class Html5Formatter:
 
         children = element.childNodes;
         if len(children) == 0 and tag != "div":
-            line += "/&gt;"
+            if tag not in void_elements:
+                line += "/"
+            line += "&gt;"
             lines += line
         else:
             line += "&gt;"
