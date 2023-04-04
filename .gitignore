@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 .idea
+docs_src/_build
