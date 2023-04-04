@@ -21,7 +21,7 @@
 # SOFTWARE.
 import xml.dom.minidom
 from xml.dom.minidom import getDOMImplementation
-from .html5_common import HTML5_DOCTYPE, raw_text_elements, void_elements
+from .html5_common import HTML5_DOCTYPE, require_end_tags, void_elements
 import html as htmlutils
 
 
@@ -143,7 +143,7 @@ class Html5Parser:
                         yield (tag, None)
             else:
                 while self.content[self.pos] != "<" or \
-                        (self.current_tag and self.current_tag in raw_text_elements \
+                        (self.current_tag and self.current_tag in require_end_tags \
                          and not self.content[self.pos:].startswith("</" + self.current_tag)):
                     token += self.content[self.pos]
                     self.pos += 1

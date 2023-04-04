@@ -23,7 +23,7 @@
 import io
 import html as htmlutils
 import xml.dom.minidom
-from .html5_common import HTML5_DOCTYPE, raw_text_elements, void_elements
+from .html5_common import HTML5_DOCTYPE, require_end_tags, void_elements
 
 
 class Html5Exporter:
@@ -79,7 +79,7 @@ class Html5Exporter:
             attr_count += 1
         child_count = len(ele.childNodes)
 
-        if attr_count > 0 or ele.tagName in raw_text_elements or child_count > 0:
+        if ele.tagName in require_end_tags or child_count > 0:
             self.of.write(">")
             if child_count:
                 self.of.write("\n")
@@ -90,8 +90,7 @@ class Html5Exporter:
                         self.__exportText(childNode, indent + 1)
                 self.of.write(" " * indent * self.indent_spaces + "</%s>" % ele.tagName)
             else:
-                if ele.tagName not in void_elements:
-                    self.of.write("</%s>" % ele.tagName)
+                self.of.write("</%s>" % ele.tagName)
         else:
             if ele.tagName not in void_elements:
                 self.of.write("/>")

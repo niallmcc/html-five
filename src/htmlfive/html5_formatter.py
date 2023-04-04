@@ -22,7 +22,7 @@
 
 import xml.dom.minidom
 from typing import Union
-from .html5_common import void_elements
+from .html5_common import void_elements, require_end_tags
 
 
 class Html5Formatter:
@@ -118,25 +118,27 @@ class Html5Formatter:
             line_length += len(aname) + len(avalue) + 4
 
         children = element.childNodes;
-        if len(children) == 0 and tag != "div":
+        if len(children) == 0 and tag != "div" and tag not in require_end_tags:
             if tag not in void_elements:
                 line += "/"
             line += "&gt;"
             lines += line
         else:
             line += "&gt;"
-            lines += line
 
-            for node in children:
+            if len(children):
+                lines += line
 
-                if node.nodeType == node.ELEMENT_NODE:
-                    lines += self.__escape_element(node, indent + 1)
+                for node in children:
 
-                elif node.nodeType == node.TEXT_NODE:
-                    if node.nodeValue:
-                        lines += self.__dump_text_node(node, indent + 1)
+                    if node.nodeType == node.ELEMENT_NODE:
+                        lines += self.__escape_element(node, indent + 1)
 
-            line = self.__indent_line(indent)
+                    elif node.nodeType == node.TEXT_NODE:
+                        if node.nodeValue:
+                            lines += self.__dump_text_node(node, indent + 1)
+
+                line = self.__indent_line(indent)
             line += "&lt;/" + '<span style="%s">' % self.tag_style + tag + '</span>' + "&gt;"
             lines += line
 
