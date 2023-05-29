@@ -61,6 +61,10 @@ dom_expected = """&lt;!DOCTYPE html&gt;
 &lt;<span style="color:red;">html</span>&gt;
     &lt;<span style="color:red;">body</span> <span style="color:blue;">attrname</span>=<span style="color:purple;">"attrvalue"</span>&gt;
         Hello
+        <pre style="color:gray;">
+        &lt;!--
+            comment
+        &gt;!--</pre>
     &lt;/<span style="color:red;">body</span>&gt;
 &lt;/<span style="color:red;">html</span>&gt;
 """
@@ -82,8 +86,12 @@ class BasicTest(unittest.TestCase):
         doc.documentElement.appendChild(body)
         txt = doc.createTextNode("Hello")
         body.appendChild(txt)
+        comment = doc.createComment("comment")
+        body.appendChild(comment)
         formatter = Html5Formatter()
         exported = formatter.format(doc)
+        with open("test.html","w") as f:
+            f.write(exported)
         self.assertEqual(exported.strip(), dom_expected.strip())
 
 

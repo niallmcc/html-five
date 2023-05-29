@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import xml.dom.minidom
 from xml.dom.minidom import getDOMImplementation
 import typing
 from .html5_exporter import Html5Exporter
@@ -27,47 +27,34 @@ from .html5_exporter import Html5Exporter
 
 class Fragment:
 
-    def __init__(self, builder):
-        self.builder = builder
-        self.node = None
-
-    def set_node(self, node):
-        self.node = node
-
-    def get_node(self):
-        return self.node
+    def get_node(self, builder:"Html5Builder"):
+        pass
 
 
 class TextFragment(Fragment):
     """
-    Represent an HTML5 element node.  Do not construct these directly, instead use ElementFragment.add_text
+    Represent an HTML5 text node.
     """
 
-    def __init__(self, builder, text):
-        super().__init__(builder)
+    def __init__(self, text):
         self.text = text
-        self.set_node(self.builder.doc.createTextNode(self.text))
+
+    def get_node(self, builder):
+        return builder.doc.createTextNode(self.text)
 
 
 class ElementFragment(Fragment):
     """
-    Represent an HTML5 element node.  Do not construct these directly, instead use ElementFragment.add_element
+    Represent a generic HTML5 element node.
     """
 
-    def __init__(self, builder: "Html5Builder", tag: str, attrs: typing.Dict[str, str] = {},
+    def __init__(self, tag: str, attrs: typing.Dict[str, str] = {},
                  style: typing.Dict[str, str] = {}):
-        super().__init__(builder)
         self.tag = tag
         self.attrs = attrs
+        self.style = style
         self.child_fragments = []
-        self.set_node(self.builder.doc.createElement(self.tag))
-        for (name, value) in self.attrs.items():
-            self.node.setAttribute(name, value)
-        if style:
-            style_value = ""
-            for (name, value) in style.items():
-                style_value += name + ":" + str(value) + ";"
-            self.node.setAttribute("style", style_value)
+
 
     def add_element(self, tag: str, attrs: typing.Dict[str, str] = {},
                     style: typing.Dict[str, str] = {}) -> "ElementFragment":
@@ -82,29 +69,54 @@ class ElementFragment(Fragment):
         Returns:
              The child fragment that was added
         """
-        fragment = ElementFragment(self.builder, tag, attrs, style)
+        fragment = ElementFragment(tag, attrs, style)
         self.add_fragment(fragment)
         return fragment
 
-    def add_text(self, text: str) -> TextFragment:
+    def add_text(self, text: str) -> "ElementFragment":
         """
         Add a child text fragment to this fragment
 
         Arguments:
             text: the text to include
-
-         Returns:
-             The child fragment that was added
         """
-        fragment = TextFragment(self.builder, text)
+        fragment = TextFragment(text)
         self.add_fragment(fragment)
-        return fragment
+        return self
+
+    def set_attribute(self,name,value) -> "ElementFragment":
+        self.attrs[name] = value
+        return self
+
+    def set_style(self, name, value) -> "ElementFragment":
+        self.style[name] = value
+        return self
 
     def add_fragment(self, fragment: Fragment) -> "Html5Builder":
         self.child_fragments.append(fragment)
-        self.node.appendChild(fragment.get_node())
         return self
 
+    def get_node(self, builder: "Html5Builder") -> xml.dom.minidom.Node:
+        node = builder.doc.createElement(self.tag)
+        for (name, value) in self.attrs.items():
+            node.setAttribute(name, value)
+        if self.style:
+            style_value = ""
+            for (name, value) in self.style.items():
+                style_value += name + ":" + str(value) + ";"
+            node.setAttribute("style", style_value)
+        for fragment in self.child_fragments:
+            node.appendChild(fragment.get_node(builder))
+        return node
+
+
+class RawFragment:
+
+    def __init__(self, node):
+        self.node = node
+
+    def get_node(self, builder):
+        return self.node
 
 class Html5Builder:
     """
@@ -135,15 +147,19 @@ class Html5Builder:
     </html>
     """
 
-    def __init__(self, language: str = ""):
+    def __init__(self, language: str = "", id_suffix="_bld", width=None):
         self.doc = getDOMImplementation().createDocument(None, "html", None)
         self.root = self.doc.documentElement
         if language:
             self.root.setAttribute("lang", language)
-        self.__head = ElementFragment(self, "head")
-        self.__body = ElementFragment(self, "body")
-        self.root.appendChild(self.__head.get_node())
-        self.root.appendChild(self.__body.get_node())
+        self.__head = ElementFragment("head")
+        self.__body = ElementFragment("body")
+        self.css = ""
+        if width:
+            self.css = "body { margin-left:auto; margin-right:auto; position:relative; width:%dpx; }"%(width)
+        self.post_build_fns = []
+        self.id_counters = {}
+        self.id_suffix = id_suffix
 
     def head(self) -> ElementFragment:
         """
@@ -171,4 +187,27 @@ class Html5Builder:
              Html formatted string
         """
         exporter = Html5Exporter()
+        if self.css:
+            self.__head.add_element("style").add_text(self.css)
+        head_node = self.__head.get_node(self)
+        body_node = self.__body.get_node(self)
+
+        for fn in self.post_build_fns:
+            fn(head_node,body_node)
+
+        self.root.appendChild(head_node)
+        self.root.appendChild(body_node)
         return exporter.export(self.doc).strip()
+
+    def register_post_build(self,fn):
+        self.post_build_fns.append(fn)
+
+    def get_next_id(self,prefix):
+        if prefix not in self.id_counters:
+            self.id_counters[prefix] = 0
+        id = prefix+str(self.id_counters[prefix])+self.id_suffix
+        self.id_counters[prefix] =  1 + self.id_counters[prefix]
+        return id
+
+
+

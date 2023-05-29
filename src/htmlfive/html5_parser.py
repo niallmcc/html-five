@@ -105,6 +105,15 @@ class Html5Parser:
     def __get_tokens(self):
         while self.pos < len(self.content):
             token = ''
+            # rather crudely intercept XML comments and yield contents with tag=__comment__
+            if self.content[self.pos:self.pos+4] == "<!--":
+                self.pos += 4
+                comment_start = self.pos
+                while self.content[self.pos:self.pos+3] != "-->":
+                    self.pos += 1
+                comment_end = self.pos
+                self.pos += 3
+                yield ("__comment__", self.content[comment_start:comment_end])
             if self.content[self.pos] == "<":
                 quoted = False
                 while self.content[self.pos] != ">" or quoted:
@@ -178,11 +187,15 @@ class Html5Parser:
                     dom = impl.createDocument(None, tag, None)
                     current_element = dom.documentElement
                 else:
-                    child = dom.createElement(tag)
-                    current_element.appendChild(child)
-                    current_element = child
-                for (name, value) in content.items():
-                    current_element.setAttribute(name, value)
+                    if tag == "__comment__":
+                        comment = dom.createComment(content)
+                        current_element.appendChild(comment)
+                    else:
+                        child = dom.createElement(tag)
+                        current_element.appendChild(child)
+                        current_element = child
+                        for (name, value) in content.items():
+                            current_element.setAttribute(name, value)
             elif tag is not None and content is None:
                 current_element = current_element.parentNode
             elif content is not None:

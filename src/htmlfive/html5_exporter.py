@@ -65,9 +65,12 @@ class Html5Exporter:
         self.of.write("<" + ele.tagName)
         attr_count = 0
         for (k, v) in ele.attributes.items():
+
             if v is None:
                 self.of.write(" %s" % k)
             else:
+                if not isinstance(v, str):
+                    v = str(v)
                 if '"' in v:
                     if "'" in v:
                         self.of.write(' %s="%s"' % (k, htmlutils.escape(v)))
@@ -88,6 +91,8 @@ class Html5Exporter:
                         self.__exportElement(childNode, indent + 1)
                     elif childNode.nodeType == childNode.TEXT_NODE:
                         self.__exportText(childNode, indent + 1)
+                    elif childNode.nodeType == childNode.COMMENT_NODE:
+                        self.__exportComment(childNode, indent + 1)
                 self.of.write(" " * indent * self.indent_spaces + "</%s>" % ele.tagName)
             else:
                 self.of.write("</%s>" % ele.tagName)
@@ -102,8 +107,17 @@ class Html5Exporter:
         txt = tn.data.rstrip(" \n").lstrip(" \n")
         if not self.__is_ws(txt):
             self.of.write(" " * indent * self.indent_spaces)
-            self.of.write(htmlutils.escape(txt))
+            # self.of.write(htmlutils.escape(txt))
+            self.of.write(txt)
             self.of.write("\n")
+
+    def __exportComment(self, cn, indent):
+        txt = cn.data.rstrip(" \n").lstrip(" \n")
+        self.of.write(" " * indent * self.indent_spaces)
+        self.of.write("<!--")
+        self.of.write(txt)
+        self.of.write("-->")
+        self.of.write("\n")
 
     def export(self, doc: xml.dom.minidom.Document) -> str:
         """

@@ -35,6 +35,7 @@ class Html5Formatter:
         tag_style: CSS to apply to tag names
         attribute_name_style: CSS to apply to attribute names
         attribute_value_style: CSS to apply to attribute values
+        comment_style: CSS to apply to comments
     Returns:
         A string containing the formatted HTML
 
@@ -61,12 +62,14 @@ class Html5Formatter:
     """
 
     def __init__(self, indent_spaces: int = 4, line_limit: int = 40, tag_style: str = "color:red;",
-                 attribute_name_style: str = "color:blue;", attribute_value_style: str = "color:purple;"):
+                 attribute_name_style: str = "color:blue;", attribute_value_style: str = "color:purple;",
+                 comment_style: str = "color:gray;"):
         self.indent_spaces = indent_spaces
         self.line_limit = line_limit
         self.tag_style = tag_style
         self.attribute_name_style = attribute_name_style
         self.attribute_value_style = attribute_value_style
+        self.comment_style = comment_style
 
     def format(self, doc_or_element: Union[xml.dom.minidom.Element, xml.dom.minidom.Document]) -> str:
         """
@@ -138,6 +141,9 @@ class Html5Formatter:
                         if node.nodeValue:
                             lines += self.__dump_text_node(node, indent + 1)
 
+                    elif node.nodeType == node.COMMENT_NODE:
+                        lines += self.__dump_comment_node(node, indent + 1)
+
                 line = self.__indent_line(indent)
             line += "&lt;/" + '<span style="%s">' % self.tag_style + tag + '</span>' + "&gt;"
             lines += line
@@ -151,4 +157,18 @@ class Html5Formatter:
             line = line.strip()
             if line:
                 lines += self.__indent_line(indent) + line
+        return lines
+
+    def __dump_comment_node(self, node, indent):
+        lines = ""
+        lines += self.__indent_line(indent)+'<pre style="%s">'% self.comment_style
+        lines += self.__indent_line(indent)+"&lt;!--"
+        textlines = node.nodeValue.split("\n")
+        for line in textlines:
+            line = line.strip()
+            if line:
+                lines += self.__indent_line(indent+1) + line
+            line += "\n"
+        lines += self.__indent_line(indent) + "&gt;!--"
+        lines += "</pre>"
         return lines

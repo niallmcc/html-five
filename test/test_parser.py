@@ -28,22 +28,18 @@ import unittest
 class BasicTest(unittest.TestCase):
 
     def test_simple(self):
-
         parser = Html5Parser()
-
-        doc = parser.parse("<!DOCTYPE html><html><body style='color:red;'>Hello World</body></html>")
-        print(doc)
-        print(doc.toprettyxml(indent="    "))
+        doc = parser.parse("<!DOCTYPE html><html><body style='color:red;'><!--comment-->Hello World</body></html>")
         self.assertEqual(doc.documentElement.tagName,"html")
         self.assertEqual(len(doc.documentElement.childNodes), 1)
         self.assertEqual(doc.documentElement.childNodes[0].tagName, "body")
         self.assertEqual(doc.documentElement.childNodes[0].attributes.items(),[("style", "color:red;")])
-        self.assertEqual(len(doc.documentElement.childNodes[0].childNodes), 1)
-        self.assertEqual(doc.documentElement.childNodes[0].childNodes[0].data, "Hello World")
+        self.assertEqual(len(doc.documentElement.childNodes[0].childNodes), 2)
+        self.assertEqual(doc.documentElement.childNodes[0].childNodes[0].data, "comment")
+        self.assertEqual(doc.documentElement.childNodes[0].childNodes[1].data, "Hello World")
 
     def test_escape(self):
         parser = Html5Parser()
-
         doc = parser.parse("<!DOCTYPE html><html><body class=\"&lt;&amp;&gt;\">&lt;Hello World&gt;</body></html>")
         self.assertEqual(len(doc.documentElement.childNodes), 1)
         self.assertEqual(doc.documentElement.childNodes[0].attributes.items(),[("class", "<&>")])

@@ -31,16 +31,20 @@ class BasicTest(unittest.TestCase):
     simple_expected = """<!DOCTYPE html>
 <html>
     <body a="&lt;b&gt;">
-        &lt;Hello&gt;
+        <!--comment-->
+        Hello
     </body>
 </html>"""
 
     def test_simple(self):
         doc = getDOMImplementation().createDocument(None, "html", None)
+        comment = doc.createComment("comment")
+
         body = doc.createElement("body")
         body.setAttribute("a","<b>")
         doc.documentElement.appendChild(body)
-        txt = doc.createTextNode("<Hello>")
+        txt = doc.createTextNode("Hello")
+        body.appendChild(comment)
         body.appendChild(txt)
         exporter = Html5Exporter()
         html = exporter.export(doc)
